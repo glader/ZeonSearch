@@ -8,7 +8,7 @@ from fabric.contrib.files import exists, append, upload_template, sed
 from fab_settings import *
 
 env.directory = '/home/%s/projects/zeonsearch' % SSH_USER
-env.manage_dir = env.directory + '/src'
+env.manage_dir = env.directory
 env.user = SSH_USER
 env.activate = 'source %s/ENV/bin/activate' % env.directory
 env.www_ssh_key = 'ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAIEAlgcYVZYvzu1GX4Td+RLt9BIqUr33gkTz6MW2MHvWS/+9eKueA6+N7Bei2NqTBNg2HLUY0uOyG1NBmzoWZglht70iChcGLMVkvciQ1/QQfr5bvIbfgpPHuZMwn4ElFiiabhnZe9wALp+jjg0TnolWxbAfwJUmv2UDXXSiYDrfBes= glader hosting rsa-key-20150528'
@@ -110,8 +110,8 @@ def local_settings():
     with settings(user=SSH_USER):
         with cd(env.manage_dir):
             upload_template(
-                'src/local_settings.py.sample',
-                'local_settings.py',
+                'zeonsearch/local_settings.py.sample',
+                'zeonsearch/local_settings.py',
                 globals(),
                 backup=False
             )
