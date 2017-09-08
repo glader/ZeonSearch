@@ -81,14 +81,21 @@ class SearchView(TemplateView):
             )
 
             phrase = ''
+            prev = words[0].offset
             for word in words:
+                diff = word.offset - prev
+                prev = word.offset
+
+                if word.block_start:
+                    phrase += '. '
+
                 if word.pk in row:
                     phrase += ' <span style="color:red">%s</span> ' % word.word
                 else:
                     phrase += ' ' + word.word
 
-                if word.block_start:
-                    phrase = '. ' + phrase
+                if diff > 1:
+                    phrase += ','
 
             results.append({
                 'record': res_words[0].record,
