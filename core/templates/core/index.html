@@ -18,8 +18,7 @@
     <!-- Example row of columns -->
     <div class="row">
         <div class="col-md-12">
-            <form class="form-inline" method="POST">
-                {% csrf_token %}
+            <form class="form-inline" method="GET">
                 <input type="text" name="query" class="form-control" placeholder="Введите поисковый запрос"
                        value="{{ query }}" style="width: 500px"> &nbsp;
                 <button type="submit" class="btn btn-primary">Искать</button>
@@ -46,6 +45,23 @@
                 {% endfor %}
             </div>
         </div>
+        <br>
+
+        <div class="row">
+            <div class="col-md-12">
+                {% if first %}
+                    <button type="button" class="btn btn-light"><a href="?query={{ query }}">&lt;&lt;</a></button>
+                {% endif %}
+                {% if prev %}
+                    <button type="button" class="btn btn-light"><a href="?query={{ query }}&page={{ prev }}">&lt;</a></button>
+                {% endif %}
+                {{ page }}
+                {% if next %}
+                    <button type="button" class="btn btn-light"><a href="?query={{ query }}&page={{ next }}">&gt;</a></button>
+                {% endif %}
+            </div>
+        </div>
+        <br>
     {% endif %}
 </div>
 

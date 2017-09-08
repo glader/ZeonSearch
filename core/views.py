@@ -9,7 +9,8 @@ from django.db import connection
 from core import models
 import pymorphy2
 
-BORDERS = 40
+BORDERS = 50
+RESULTS_PER_PAGE = 20
 
 log = logging.getLogger(__name__)
 
@@ -17,12 +18,13 @@ log = logging.getLogger(__name__)
 class SearchView(TemplateView):
     template_name = 'core/index.html'
 
-    def post(self, request, *args, **kwargs):
-        query = request.POST['query'].strip()
-        log.info('Search for <%s>', query)
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('query', '').strip()
 
         if not query:
-            return self.get(request)
+            return self.render_to_response({})
+
+        log.info('Search for <%s>', query)
 
         morph = pymorphy2.MorphAnalyzer()
         words = [morph.parse(word.strip())[0].normal_form for word in query.split(' ')]
@@ -34,12 +36,17 @@ class SearchView(TemplateView):
             return self.render_to_response({'query': query, 'error': 'Слишком длинный запрос'})
 
         if amount == 1:
-            q = 'SELECT n1.word_id FROM core_wordnormal n1 WHERE n1.normal=%s'
+            q = '''SELECT n0.word_id 
+                   FROM core_wordnormal n0 
+                   JOIN core_word w ON n0.word_id=w.id
+                   JOIN core_record r ON w.record_id=r.id 
+                   WHERE n0.normal=%s'''
 
         else:
             select = 'SELECT ' + ', '.join('n%s.word_id' % i for i in xrange(amount))
             where = ' WHERE ' + ' AND '.join('n%s.normal=%%s' % i for i in xrange(amount))
-            join = ' FROM core_wordnormal n0 '
+            join = ''' FROM core_wordnormal n0 JOIN core_word w ON n0.word_id=w.id
+                   JOIN core_record r ON w.record_id=r.id  '''
             for i in xrange(1, amount):
                 join += ' JOIN core_wordnormal n{curr} ' \
                         'ON n{prev}.record_id=n{curr}.record_id ' \
@@ -48,13 +55,21 @@ class SearchView(TemplateView):
 
             q = select + join + where
 
-        q += ' LIMIT 20'
+        q += ' ORDER BY r.dt DESC, w.position ASC'
+        q += ' LIMIT %s' % (RESULTS_PER_PAGE + 1)
+
+        page = 1
+        if request.GET.get('page'):
+            page = int(request.GET.get('page'))
+
+        q += ' OFFSET %s' % (RESULTS_PER_PAGE * (page - 1))
 
         cursor = connection.cursor()
         cursor.execute(q, words)
 
         results = []
-        for row in cursor.fetchall():
+        data = cursor.fetchall()
+        for row in data[:RESULTS_PER_PAGE]:
             res_words = [models.Word.objects.get(pk=word_id) for word_id in row]
             start_position = max(res_words[0].position - BORDERS, 0)
             finish_position = res_words[-1].position + BORDERS
@@ -78,7 +93,14 @@ class SearchView(TemplateView):
             results.append({
                 'record': res_words[0].record,
                 'phrase': phrase,
-                'start': timedelta(seconds=words[0].offset)
+                'start': timedelta(seconds=words[0].offset),
             })
 
-        return self.render_to_response({'query': query, 'results': results})
+        return self.render_to_response({
+            'query': query,
+            'results': results,
+            'page': page,
+            'first': 1 if page > 1 else None,
+            'prev': page - 1 if page > 1 else None,
+            'next': page + 1 if len(data) > RESULTS_PER_PAGE else None,
+        })
