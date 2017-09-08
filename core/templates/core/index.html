@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css"
+          integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+</head>
+<body>
+<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <a class="navbar-brand" href="#">Зеоны</a>
+</nav>
+
+<div class="container" style="margin-top: 70px">
+    <!-- Example row of columns -->
+    <div class="row">
+        <div class="col-md-12">
+            <form class="form-inline" method="POST">
+                {% csrf_token %}
+                <input type="text" name="query" class="form-control" placeholder="Введите поисковый запрос"
+                       value="{{ query }}" style="width: 500px"> &nbsp;
+                <button type="submit" class="btn btn-primary">Искать</button>
+            </form>
+        </div>
+    </div>
+
+    {% if error %}
+        <div>{{ error }}</div>
+    {% endif %}
+
+    {% if results %}
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Результаты</h2>
+                {% for result in results %}
+                    <div style="margin-top: 20px; padding: 5px; background-color: #dddddd">
+                        ... {{ result.phrase|safe }} ...
+                    </div>
+                    <div style="margin-top: 5px; font-size: 80%">
+                        <a href="{{ result.record.url }}">{{ result.record.author }}, {{ result.record.dt }},
+                            начиная с {{ result.start }}</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+</body>
+</html>
